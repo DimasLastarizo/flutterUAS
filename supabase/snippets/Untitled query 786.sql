@@ -1,0 +1,1 @@
+select public.reset_season_if_needed();
