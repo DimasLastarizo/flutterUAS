@@ -44,23 +44,24 @@ import 'app_theme.dart';
 
 class _BadgeTier {
   final String emoji, title, desc;
-  final Color accent;
   final int minPoin;
+  final int tierIndex;
   const _BadgeTier(
     this.emoji,
     this.title,
     this.desc,
-    this.accent,
     this.minPoin,
+    this.tierIndex,
   );
 }
 
 class _ProfileData {
-  String name, email, bio;
+  String name, username, email, bio;
   int avatarIndex;
   DateTime? memberSince;
   _ProfileData({
     required this.name,
+    required this.username,
     required this.email,
     required this.bio,
     required this.avatarIndex,
@@ -82,6 +83,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   final _profile = _ProfileData(
     name: 'User',
+    username: '',
     email: 'user@email.com',
     bio: 'Pelajar yang bersemangat di bidang teknologi 🚀',
     avatarIndex: 0,
@@ -126,26 +128,28 @@ class _ProfilePageState extends State<ProfilePage>
     return 'Level $_gameLevel';
   }
 
-  List<_BadgeTier> get _tiers => [
-    _BadgeTier('🌱', 'Pemula', '0–29 XP', AppTheme.greenGl, 0),
-    _BadgeTier('⚡', 'Code Rookie', '30–79 XP', AppTheme.cyan, 30),
-    _BadgeTier('⚔️', 'Code Warrior', '80–149 XP', AppTheme.green, 80),
-    _BadgeTier('🎯', 'Code Master', '150–249 XP', AppTheme.cyanGl, 150),
-    _BadgeTier('👑', 'Kilat Legend', '250+ XP', AppTheme.purple, 250),
+  static final List<_BadgeTier> _badgeTiers = [
+    _BadgeTier('🌱', 'Pemula', '0–29 XP', 0, 0),
+    _BadgeTier('⚡', 'Code Rookie', '30–79 XP', 30, 1),
+    _BadgeTier('⚔️', 'Code Warrior', '80–149 XP', 80, 2),
+    _BadgeTier('🎯', 'Code Master', '150–249 XP', 150, 3),
+    _BadgeTier('👑', 'Kilat Legend', '250+ XP', 250, 4),
   ];
 
-  _BadgeTier get _currentTier {
-    _BadgeTier r = _tiers[0];
-    for (final t in _tiers) {
-      if (_totalPoin >= t.minPoin) r = t;
+  int get _currentTierIndex {
+    var idx = 0;
+    for (var i = 0; i < _badgeTiers.length; i++) {
+      if (_totalPoin >= _badgeTiers[i].minPoin) idx = i;
     }
-    return r;
+    return idx;
   }
 
-  _BadgeTier? get _nextTier {
-    final idx = _tiers.indexOf(_currentTier);
-    return idx < _tiers.length - 1 ? _tiers[idx + 1] : null;
-  }
+  _BadgeTier get _currentTier => _badgeTiers[_currentTierIndex];
+
+  _BadgeTier? get _nextTier =>
+      _currentTierIndex < _badgeTiers.length - 1
+          ? _badgeTiers[_currentTierIndex + 1]
+          : null;
 
   int _xpToNextRank(_BadgeTier? next) {
     if (next == null) return 0;
@@ -175,11 +179,14 @@ class _ProfilePageState extends State<ProfilePage>
     final user = context.read<UserProvider>().user;
     if (user != null) {
       _profile.name = user.nama;
+      _profile.username = user.username;
       _profile.email = user.email;
       _profileSynced = true;
       AuthService.fetchProfile().then((p) {
         if (p != null && mounted) {
           setState(() {
+            _profile.username =
+                p['username'] as String? ?? _profile.username;
             _profile.memberSince = AuthService.memberSinceFromProfile(p);
           });
         }
@@ -189,6 +196,8 @@ class _ProfilePageState extends State<ProfilePage>
         if (p != null && mounted) {
           setState(() {
             _profile.name = p['nama'] as String? ?? _profile.name;
+            _profile.username =
+                p['username'] as String? ?? _profile.username;
             _profile.email = p['email'] as String? ?? _profile.email;
             _profile.memberSince = AuthService.memberSinceFromProfile(p);
             _profileSynced = true;
@@ -284,15 +293,18 @@ class _ProfilePageState extends State<ProfilePage>
                       height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [
-                            AppTheme.greenDk,
-                            AppTheme.green,
-                            AppTheme.greenGl,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: t.isDark ? AppTheme.green : null,
+                        gradient: t.isDark
+                            ? null
+                            : const LinearGradient(
+                                colors: [
+                                  AppTheme.greenDk,
+                                  AppTheme.green,
+                                  AppTheme.greenGl,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
                         boxShadow: [
                           BoxShadow(
                             color: AppTheme.green.withValues(alpha: 0.3),
@@ -428,11 +440,18 @@ class _ProfilePageState extends State<ProfilePage>
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppTheme.greenDk, AppTheme.green, AppTheme.greenGl],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: context.read<AppTheme>().isDark ? AppTheme.green : null,
+                gradient: context.read<AppTheme>().isDark
+                    ? null
+                    : const LinearGradient(
+                        colors: [
+                          AppTheme.greenDk,
+                          AppTheme.green,
+                          AppTheme.greenGl,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -469,7 +488,7 @@ class _ProfilePageState extends State<ProfilePage>
             const _InfoRow(label: 'Lisensi', value: 'MIT License'),
             const SizedBox(height: 20),
             Text(
-              'Made with â¤ï¸ in Indonesia',
+              'Made with ❤️ in Indonesia',
               style: TextStyle(
                 color: context.read<AppTheme>().textMid,
                 fontSize: 12,
@@ -506,16 +525,16 @@ class _ProfilePageState extends State<ProfilePage>
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: tier.accent.withValues(alpha: 0.12),
+                      color: t.badgeColorForTier(_currentTierIndex).withValues(alpha: 0.12),
                       border: Border.all(
-                        color: tier.accent.withValues(alpha: 
+                        color: t.badgeColorForTier(_currentTierIndex).withValues(alpha: 
                           0.4 + 0.1 * _glowPulse.value,
                         ),
                         width: 2.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: tier.accent.withValues(alpha: 
+                          color: t.badgeColorForTier(_currentTierIndex).withValues(alpha: 
                             0.3 + 0.1 * _glowPulse.value,
                           ),
                           blurRadius: 24,
@@ -534,7 +553,7 @@ class _ProfilePageState extends State<ProfilePage>
                 Text(
                   tier.title,
                   style: TextStyle(
-                    color: tier.accent,
+                    color: t.badgeColorForTier(_currentTierIndex),
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                   ),
@@ -628,8 +647,8 @@ class _ProfilePageState extends State<ProfilePage>
                         const SizedBox(height: 10),
                         _ProgressBar(
                           progress: progress.clamp(0.0, 1.0),
-                          colorA: tier.accent,
-                          colorB: next.accent,
+                          colorA: t.badgeColorForTier(_currentTierIndex),
+                          colorB: t.badgeColorForTier(_currentTierIndex + 1),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -648,12 +667,12 @@ class _ProfilePageState extends State<ProfilePage>
                     border: Border.all(color: t.divider),
                   ),
                   child: Column(
-                    children: _tiers.asMap().entries.map((e) {
+                    children: _badgeTiers.asMap().entries.map((e) {
                       final i = e.key;
                       final tItem = e.value;
                       final achieved = _totalPoin >= tItem.minPoin;
                       final isCurrent = tItem == tier;
-                      final isLast = i == _tiers.length - 1;
+                      final isLast = i == _badgeTiers.length - 1;
                       return Column(
                         children: [
                           Padding(
@@ -700,13 +719,13 @@ class _ProfilePageState extends State<ProfilePage>
                                       vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: tItem.accent.withValues(alpha: 0.15),
+                                      color: t.badgeColorForTier(i).withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
                                       'Sekarang',
                                       style: TextStyle(
-                                        color: tItem.accent,
+                                        color: t.badgeColorForTier(i),
                                         fontSize: 10,
                                         fontWeight: FontWeight.w800,
                                       ),
@@ -868,30 +887,29 @@ class _ProfilePageState extends State<ProfilePage>
       backgroundColor: t.bg,
       body: Stack(
         children: [
-          AnimatedBuilder(
-            animation: _glowPulse,
-            builder: (_, _) => Positioned(
-              top: -80,
-              left: -60,
-              child: Container(
-                width: 280,
-                height: 280,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppTheme.green.withValues(alpha: 
-                        t.isDark
-                            ? 0.05 + 0.02 * _glowPulse.value
-                            : 0.08 + 0.03 * _glowPulse.value,
-                      ),
-                      Colors.transparent,
-                    ],
+          if (!t.isDark)
+            AnimatedBuilder(
+              animation: _glowPulse,
+              builder: (_, _) => Positioned(
+                top: -80,
+                left: -60,
+                child: Container(
+                  width: 280,
+                  height: 280,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppTheme.green.withValues(
+                          alpha: 0.08 + 0.03 * _glowPulse.value,
+                        ),
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           Positioned.fill(child: _GridDots()),
           FadeTransition(
             opacity: _fadeAnim,
@@ -951,21 +969,18 @@ class _ProfilePageState extends State<ProfilePage>
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: t.isDark
-                ? [
-                    AppTheme.greenDk.withValues(alpha: 0.14),
-                    const Color(0xFF13131F),
-                    const Color(0xFF0A100D),
-                  ]
-                : [
+          color: t.isDark ? t.surface : null,
+          gradient: t.isDark
+              ? null
+              : LinearGradient(
+                  colors: [
                     AppTheme.green.withValues(alpha: 0.08),
                     Colors.white,
                     const Color(0xFFF5FBF8),
                   ],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-          ),
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                ),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: AppTheme.green.withValues(alpha: t.isDark ? 0.28 : 0.22),
@@ -1064,6 +1079,17 @@ class _ProfilePageState extends State<ProfilePage>
                             letterSpacing: -0.4,
                           ),
                         ),
+                        if (_profile.username.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            '@${_profile.username}',
+                            style: TextStyle(
+                              color: t.secondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 3),
                         Text(
                           _profile.email,
@@ -1116,20 +1142,20 @@ class _ProfilePageState extends State<ProfilePage>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppTheme.cyan.withValues(alpha:
+                              color: t.secondary.withValues(alpha:
                                 t.isDark ? 0.1 : 0.08,
                               ),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: AppTheme.cyan.withValues(alpha: 0.25),
+                                color: t.secondary.withValues(alpha: 0.25),
                               ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.verified_rounded,
-                                  color: AppTheme.cyan,
+                                  color: t.secondary,
                                   size: 11,
                                 ),
                                 const SizedBox(width: 4),
@@ -1137,8 +1163,8 @@ class _ProfilePageState extends State<ProfilePage>
                                   AuthService.formatMemberSince(
                                     _profile.memberSince!,
                                   ),
-                                  style: const TextStyle(
-                                    color: AppTheme.cyan,
+                                  style: TextStyle(
+                                    color: t.secondary,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -1174,7 +1200,9 @@ class _ProfilePageState extends State<ProfilePage>
                               angle: _badgeSpin.value * 2 * math.pi,
                               child: CustomPaint(
                                 size: const Size(56, 56),
-                                painter: _DashedRingPainter(color: tier.accent),
+                                painter: _DashedRingPainter(
+                                  color: t.badgeColorForTier(_currentTierIndex),
+                                ),
                               ),
                             ),
                           ),
@@ -1185,10 +1213,12 @@ class _ProfilePageState extends State<ProfilePage>
                               height: 42,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: tier.accent.withValues(alpha: 0.15),
+                                color: t.badgeColorForTier(_currentTierIndex)
+                                    .withValues(alpha: 0.15),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: tier.accent.withValues(alpha: 
+                                    color: t.badgeColorForTier(_currentTierIndex)
+                                        .withValues(alpha: 
                                       0.28 + 0.12 * _glowPulse.value,
                                     ),
                                     blurRadius: 14 + 6 * _glowPulse.value,
@@ -1219,16 +1249,16 @@ class _ProfilePageState extends State<ProfilePage>
                                   vertical: 3,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.cyan.withValues(alpha: 0.12),
+                                  color: t.secondary.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: AppTheme.cyan.withValues(alpha: 0.25),
+                                    color: t.secondary.withValues(alpha: 0.25),
                                   ),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Rank Badge',
                                   style: TextStyle(
-                                    color: AppTheme.cyan,
+                                    color: t.secondary,
                                     fontSize: 9,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: 0.5,
@@ -1255,7 +1285,7 @@ class _ProfilePageState extends State<ProfilePage>
                           Text(
                             tier.title,
                             style: TextStyle(
-                              color: tier.accent,
+                              color: t.badgeColorForTier(_currentTierIndex),
                               fontSize: 16,
                               fontWeight: FontWeight.w900,
                               letterSpacing: -0.3,
@@ -1273,17 +1303,19 @@ class _ProfilePageState extends State<ProfilePage>
                               children: [
                                 Text(
                                   xpToNext > 0
-                                      ? '$xpToNext XP lagi → '
-                                      : 'Rank berikutnya tercapai → ',
+                                      ? '$_totalPoin / ${next.minPoin} XP · '
+                                      : 'Rank berikutnya tercapai · ',
                                   style: TextStyle(
                                     color: t.textMid,
                                     fontSize: 10,
                                   ),
                                 ),
                                 Text(
-                                  '${next.emoji} ${next.title}',
+                                  xpToNext > 0
+                                      ? '$xpToNext XP lagi → ${next.emoji} ${next.title}'
+                                      : '${next.emoji} ${next.title}',
                                   style: TextStyle(
-                                    color: next.accent,
+                                    color: t.badgeColorForTier(next.tierIndex),
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -1331,18 +1363,18 @@ class _ProfilePageState extends State<ProfilePage>
                       height: 56,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppTheme.cyan.withValues(alpha: 
+                        color: t.secondary.withValues(alpha: 
                           t.isDark ? 0.08 : 0.06,
                         ),
                         border: Border.all(
-                          color: AppTheme.cyan.withValues(alpha: 
+                          color: t.secondary.withValues(alpha: 
                             0.3 + 0.08 * _glowPulse.value,
                           ),
                           width: 2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.cyan.withValues(alpha: 
+                            color: t.secondary.withValues(alpha: 
                               t.isDark ? 0.12 + 0.06 * _glowPulse.value : 0.08,
                             ),
                             blurRadius: 12,
@@ -1352,10 +1384,10 @@ class _ProfilePageState extends State<ProfilePage>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
+                          Text(
                             'LVL',
                             style: TextStyle(
-                              color: AppTheme.cyan,
+                              color: t.secondary,
                               fontSize: 8,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1,
@@ -1363,8 +1395,8 @@ class _ProfilePageState extends State<ProfilePage>
                           ),
                           Text(
                             '$_gameLevel',
-                            style: const TextStyle(
-                              color: AppTheme.cyan,
+                            style: TextStyle(
+                              color: t.secondary,
                               fontSize: 20,
                               fontWeight: FontWeight.w900,
                               height: 1.1,
@@ -1655,7 +1687,10 @@ class _ProgressBar extends StatelessWidget {
           child: Container(
             height: 5,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [colorA, colorB]),
+              color: t.isDark ? colorA : null,
+              gradient: t.isDark
+                  ? null
+                  : LinearGradient(colors: [colorA, colorB]),
               borderRadius: BorderRadius.circular(3),
               boxShadow: [
                 BoxShadow(color: colorA.withValues(alpha: 0.5), blurRadius: 4),
@@ -1838,15 +1873,19 @@ class _GreenBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.watch<AppTheme>();
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppTheme.greenDk, AppTheme.green, AppTheme.greenGl],
-          ),
+          color: t.isDark ? AppTheme.green : null,
+          gradient: t.isDark
+              ? null
+              : const LinearGradient(
+                  colors: [AppTheme.greenDk, AppTheme.green, AppTheme.greenGl],
+                ),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(color: AppTheme.green.withValues(alpha: 0.35), blurRadius: 12),

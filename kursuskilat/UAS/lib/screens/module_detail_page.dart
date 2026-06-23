@@ -18,9 +18,8 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 const _kApiKey = String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
 const _kModel  = 'llama-3.3-70b-versatile';
 
-// ── ACCENT COLORS (tidak berubah antar mode) ──────────────────────────────────
+// ── ACCENT COLORS (light mode legacy) ────────────────────────────────────────
 const _blue   = Color(0xFF4E9DFF);
-const _amber  = Color(0xFFE8A838);
 const _iris   = Color(0xFF7B9FFF);
 const _purple = Color(0xFF9B6FE8);
 const _orange = Color(0xFFFF9F43);
@@ -196,13 +195,21 @@ class SimulatedVideoPlayer extends StatelessWidget {
             child: Stack(children: [
               Container(
                   decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          colors: [
-                            accentColor.withValues(alpha: t.isDark ? 0.15 : 0.10),
-                            t.isDark ? const Color(0xFF0D0D18) : t.surfaceB,
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter))),
+                      color: t.isDark
+                          ? t.surfaceB
+                          : null,
+                      gradient: t.isDark
+                          ? null
+                          : LinearGradient(
+                              colors: [
+                                accentColor.withValues(alpha: 0.10),
+                                t.surfaceB,
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                  ),
+              ),
               Center(
                   child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -219,13 +226,18 @@ class SimulatedVideoPlayer extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         if (introVideoUrl.isNotEmpty)
-                          _badge(AppTheme.cyan, 'URL VIDEO TERHUBUNG'),
+                          _badge(
+                            t.isDark ? t.secondary : AppTheme.cyan,
+                            'URL VIDEO TERHUBUNG',
+                          ),
                         const SizedBox(height: 4),
                         Text(
                           'Video tidak tersedia atau tidak didukung',
                           style: TextStyle(color: t.textMid, fontSize: 12),
                         ),
-                      ])),
+                      ],
+                    ),
+                  ),
             ]),
           ),
         ),
@@ -363,10 +375,15 @@ class _AiTutorChatState extends State<AiTutorChat> {
                 padding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [
-                      const Color(0xFF4A6FD4).withValues(alpha: t.isDark ? 0.15 : 0.1),
-                      _purple.withValues(alpha: t.isDark ? 0.1 : 0.07)
-                    ]),
+                    color: t.isDark
+                        ? AppTheme.iris.withValues(alpha: 0.12)
+                        : null,
+                    gradient: t.isDark
+                        ? null
+                        : LinearGradient(colors: [
+                            const Color(0xFF4A6FD4).withValues(alpha: 0.1),
+                            _purple.withValues(alpha: 0.07),
+                          ]),
                     borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(16),
                         topRight: const Radius.circular(16),
@@ -377,13 +394,17 @@ class _AiTutorChatState extends State<AiTutorChat> {
                       width: 34,
                       height: 34,
                       decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFF4A6FD4),
-                                Color(0xFF9B6FE8)
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight),
+                          color: t.isDark ? AppTheme.iris : null,
+                          gradient: t.isDark
+                              ? null
+                              : const LinearGradient(
+                                  colors: [
+                                    Color(0xFF4A6FD4),
+                                    Color(0xFF9B6FE8),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
                           borderRadius: BorderRadius.circular(10)),
                       child: const Center(
                           child:
@@ -486,12 +507,17 @@ class _AiTutorChatState extends State<AiTutorChat> {
                                         width: 24,
                                         height: 24,
                                         decoration: BoxDecoration(
-                                            gradient:
-                                            const LinearGradient(
-                                                colors: [
-                                                  Color(0xFF4A6FD4),
-                                                  Color(0xFF9B6FE8)
-                                                ]),
+                                            color: t.isDark
+                                                ? AppTheme.iris
+                                                : null,
+                                            gradient: t.isDark
+                                                ? null
+                                                : const LinearGradient(
+                                                    colors: [
+                                                      Color(0xFF4A6FD4),
+                                                      Color(0xFF9B6FE8),
+                                                    ],
+                                                  ),
                                             borderRadius:
                                             BorderRadius.circular(
                                                 8)),
@@ -508,23 +534,25 @@ class _AiTutorChatState extends State<AiTutorChat> {
                                               horizontal: 10,
                                               vertical: 8),
                                           decoration: BoxDecoration(
-                                              gradient: isUser
-                                                  ? const LinearGradient(
-                                                  colors: [
-                                                    Color(0xFF4A6FD4),
-                                                    Color(0xFF7B5FCC)
-                                                  ],
-                                                  begin: Alignment
-                                                      .topLeft,
-                                                  end: Alignment
-                                                      .bottomRight)
-                                                  : null,
                                               color: isUser
-                                                  ? null
+                                                  ? (t.isDark
+                                                      ? AppTheme.irisDk
+                                                      : null)
                                                   : (t.isDark
-                                                  ? const Color(
-                                                  0xFF22223A)
-                                                  : t.surface),
+                                                      ? t.surfaceB
+                                                      : t.surface),
+                                              gradient: isUser && !t.isDark
+                                                  ? const LinearGradient(
+                                                      colors: [
+                                                        Color(0xFF4A6FD4),
+                                                        Color(0xFF7B5FCC),
+                                                      ],
+                                                      begin: Alignment
+                                                          .topLeft,
+                                                      end: Alignment
+                                                          .bottomRight,
+                                                    )
+                                                  : null,
                                               borderRadius:
                                               BorderRadius.only(
                                                 topLeft:
@@ -608,7 +636,10 @@ class _AiTutorChatState extends State<AiTutorChat> {
                             decoration: BoxDecoration(
                                 borderRadius:
                                 BorderRadius.circular(11),
-                                gradient: _typing
+                                color: _typing
+                                    ? t.surfaceB
+                                    : (t.isDark ? AppTheme.iris : null),
+                                gradient: _typing || t.isDark
                                     ? null
                                     : const LinearGradient(
                                     colors: [
@@ -618,7 +649,6 @@ class _AiTutorChatState extends State<AiTutorChat> {
                                     begin: Alignment.topLeft,
                                     end:
                                     Alignment.bottomRight),
-                                color: _typing ? t.surfaceB : null,
                                 boxShadow: _typing
                                     ? null
                                     : [
@@ -753,7 +783,7 @@ class _RichText extends StatelessWidget {
                       Border.all(color: _iris.withValues(alpha: 0.3))),
                   child: Text(inner,
                       style: TextStyle(
-                          color: isUser ? Colors.white70 : _amber,
+                          color: isUser ? Colors.white70 : AppTheme.iris,
                           fontSize: 10,
                           fontFamily: 'monospace')))));
         }
@@ -784,7 +814,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
   final _scroll = ScrollController();
   final _tabScroll = ScrollController();
 
-  // Accent color palette per module index
+  // Light mode: variasi warna per modul. Dark mode: hijau + iris saja.
   static const _accentPalette = [
     AppTheme.green,
     _blue,
@@ -792,6 +822,11 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
     _purple,
     _iris,
   ];
+
+  Color _moduleAccent(int i, AppTheme theme) {
+    if (!theme.isDark) return _accentPalette[i % _accentPalette.length];
+    return i.isEven ? AppTheme.green : AppTheme.iris;
+  }
 
   @override
   void initState() {
@@ -838,8 +873,8 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
   ModulMateri get _primaryModule => _modules.first;
   SubMateri get _sub => _mod.subMateri.first;
   SubMateri get _primarySub => _primaryModule.subMateri.first;
-  Color get _accent => _accentPalette[_mi % _accentPalette.length];
-  Color get _primaryAccent => _accentPalette[0];
+  Color _accentFor(AppTheme t) => _moduleAccent(_mi, t);
+  Color _primaryAccentFor(AppTheme t) => _moduleAccent(0, t);
 
   void _selMod(int i) {
     if (i <= 0 || i >= _modules.length) return;
@@ -970,7 +1005,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
             final i = li + 1;
             final m = _modules[i];
             final sel = i == _mi;
-            final c = _accentPalette[i % _accentPalette.length];
+            final c = _moduleAccent(i, t);
 
             return GestureDetector(
               onTap: () => _selMod(i),
@@ -1126,7 +1161,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                 color: t.textSec, fontSize: 13, height: 1.7)),
         if (s.keyPoints.isNotEmpty) ...[
           const SizedBox(height: 14),
-          _keyPointsSection(t, s.keyPoints, _primaryAccent),
+          _keyPointsSection(t, s.keyPoints, _primaryAccentFor(t)),
         ],
       ]),
     );
@@ -1190,11 +1225,11 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                            color: _accent.withValues(alpha: 0.12),
+                            color: _accentFor(t).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(6)),
                         child: Text('MATERI TERPILIH',
                             style: TextStyle(
-                                color: _accent,
+                                color: _accentFor(t),
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 1))),
@@ -1214,7 +1249,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                   ])),
           if (s.keyPoints.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _card(t, child: _keyPointsSection(t, s.keyPoints, _accent)),
+            _card(t, child: _keyPointsSection(t, s.keyPoints, _accentFor(t))),
           ],
         ]);
   }

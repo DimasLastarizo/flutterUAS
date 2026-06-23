@@ -7,12 +7,12 @@ import 'package:http/http.dart' as http;
 
 const _surface  = Color(0xFF13131F);
 const _surfaceB = Color(0xFF1C1C2E);
-const _amber    = Color(0xFFE8A838);
 const _divider  = Color(0xFF1E1E30);
 const _textPri  = Color(0xFFF0F0FA);
 const _textSec  = Color(0xFF9999BB);
 const _textMid  = Color(0xFF666888);
-const _iris     = Color(0xFF7B9FFF); // warna aksen I.R.I.S. — biru keunguan
+const _iris     = Color(0xFF7B9FFF);
+const _irisDk   = Color(0xFF4A6FD4);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🔑 KONFIGURASI API KEY — GANTI DI SINI
@@ -303,11 +303,7 @@ class _AiFloatingButtonState extends State<_AiFloatingButton>
         child: Container(
           width: 46, height: 46,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF4A6FD4), Color(0xFF9B6FE8)],
-              begin: Alignment.topLeft,
-              end:   Alignment.bottomRight,
-            ),
+            color: _iris,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(color: _iris.withValues(alpha: 0.4), blurRadius: 18, spreadRadius: 2),
@@ -412,14 +408,11 @@ class _AiBottomSheetState extends State<_AiBottomSheet>
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         child: Row(children: [
-          // Avatar I.R.I.S. — biru-ungu gradient
+          // Avatar I.R.I.S.
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4A6FD4), Color(0xFF9B6FE8)],
-                begin: Alignment.topLeft, end: Alignment.bottomRight,
-              ),
+              color: _iris,
               borderRadius: BorderRadius.circular(11),
             ),
             child: const Center(child: Text('🔍', style: TextStyle(fontSize: 16))),
@@ -453,11 +446,7 @@ class _AiBottomSheetState extends State<_AiBottomSheet>
         ]),
       ),
       // Garis tipis berwarna iris sebagai aksen
-      Container(height: 1, decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF4A6FD4), Color(0xFF9B6FE8), Color(0xFF1E1E30)],
-        ),
-      )),
+      Container(height: 1, color: _divider),
     ]);
   }
 
@@ -566,13 +555,7 @@ class _AiBottomSheetState extends State<_AiBottomSheet>
             child: Container(
               width: 42, height: 42,
               decoration: BoxDecoration(
-                gradient: ai.isTyping
-                    ? null
-                    : const LinearGradient(
-                  colors: [Color(0xFF4A6FD4), Color(0xFF9B6FE8)],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
-                ),
-                color:        ai.isTyping ? _surfaceB : null,
+                color: ai.isTyping ? _surfaceB : _iris,
                 borderRadius: BorderRadius.circular(13),
                 boxShadow:    ai.isTyping ? [] : [
                   BoxShadow(color: _iris.withValues(alpha: 0.35), blurRadius: 10),
@@ -602,10 +585,7 @@ class _AiBottomSheetState extends State<_AiBottomSheet>
           Container(
             width: 28, height: 28,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4A6FD4), Color(0xFF9B6FE8)],
-                begin: Alignment.topLeft, end: Alignment.bottomRight,
-              ),
+              color: _iris,
               borderRadius: BorderRadius.circular(9),
             ),
             child: const Center(child: Text('🔍', style: TextStyle(fontSize: 13))),
@@ -627,14 +607,7 @@ class _AiBottomSheetState extends State<_AiBottomSheet>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               decoration: BoxDecoration(
-                // User: biru-ungu, I.R.I.S.: dark surface dengan border tipis iris
-                gradient: isUser
-                    ? const LinearGradient(
-                  colors: [Color(0xFF4A6FD4), Color(0xFF7B5FCC)],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
-                )
-                    : null,
-                color: isUser ? null : _surfaceB,
+                color: isUser ? _irisDk : _surfaceB,
                 borderRadius: BorderRadius.only(
                   topLeft:     const Radius.circular(14),
                   topRight:    const Radius.circular(14),
@@ -652,10 +625,7 @@ class _AiBottomSheetState extends State<_AiBottomSheet>
           Container(
             width: 28, height: 28,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4A6FD4), Color(0xFF7B5FCC)],
-                begin: Alignment.topLeft, end: Alignment.bottomRight,
-              ),
+              color: _irisDk,
               borderRadius: BorderRadius.circular(9),
             ),
             child: const Center(
@@ -722,7 +692,7 @@ class _AiBottomSheetState extends State<_AiBottomSheet>
               ),
               child: Text(inner,
                   style: TextStyle(
-                      color: isUser ? Colors.white70 : _amber,
+                      color: isUser ? Colors.white70 : _iris,
                       fontSize: 11, fontFamily: 'monospace')),
             ),
           ));
@@ -742,10 +712,7 @@ class _AiBottomSheetState extends State<_AiBottomSheet>
         Container(
           width: 28, height: 28,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF4A6FD4), Color(0xFF9B6FE8)],
-              begin: Alignment.topLeft, end: Alignment.bottomRight,
-            ),
+            color: _iris,
             borderRadius: BorderRadius.circular(9),
           ),
           child: const Center(child: Text('🔍', style: TextStyle(fontSize: 13))),
@@ -882,10 +849,7 @@ class AiContextButton extends StatelessWidget {
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4A6FD4), Color(0xFF9B6FE8)],
-                begin: Alignment.topLeft, end: Alignment.bottomRight,
-              ),
+              color: _iris,
               borderRadius: BorderRadius.circular(11),
             ),
             child: const Center(child: Text('🔍', style: TextStyle(fontSize: 16))),

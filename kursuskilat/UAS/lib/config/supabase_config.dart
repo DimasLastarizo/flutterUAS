@@ -2,14 +2,21 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
-/// URL dan anon key Supabase local.
+/// URL dan anon key Supabase.
+///
+/// Local (default): URL dari resolveUrl(), anon key demo Supabase local.
+/// Cloud: jalankan dengan dart-define, contoh:
+/// `flutter run --dart-define=SUPABASE_URL=https://xxx.supabase.co --dart-define=SUPABASE_ANON_KEY=eyJ...`
 ///
 /// Default Android dibuat untuk HP fisik di WiFi yang sama dengan laptop.
 /// Kalau nanti pakai Android Emulator, jalankan dengan:
 /// `flutter run --dart-define=SUPABASE_USE_ANDROID_EMULATOR=true`
 class SupabaseConfig {
-  static const anonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+  static const anonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
+  );
 
   static const lanHost = String.fromEnvironment(
     'SUPABASE_LAN_HOST',

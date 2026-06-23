@@ -12,7 +12,7 @@ import 'leaderboard_page.dart' as leaderboard;
 import 'package:kursuskilat/screens/ai_assistant_overlay.dart';
 import 'quiz_page.dart';
 
-// ── WARNA AKSEN (tidak berubah antar mode) ───────────────────────────────────
+// ── WARNA AKSEN LIGHT (dark memakai AppTheme.iris / AppTheme.green) ──────────
 const kBlue = Color(0xFF4E9DFF);
 const kIris = Color(0xFF7B9FFF);
 const kPurple = Color(0xFF8D5CFF);
@@ -362,7 +362,8 @@ class _LevelStartDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.watch<AppTheme>();
     final emoji = _moduleEmojis[data.moduleIndex % _moduleEmojis.length];
-    final statusColor = levelStatusColor(data.status);
+    final statusColor = levelStatusColor(data.status, isDark: t.isDark);
+    final sec = t.secondary;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -371,9 +372,9 @@ class _LevelStartDialog extends StatelessWidget {
         decoration: BoxDecoration(
           color: t.surfaceB,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: kIris.withValues(alpha: 0.25)),
+          border: Border.all(color: sec.withValues(alpha: 0.25)),
           boxShadow: [
-            BoxShadow(color: kIris.withValues(alpha: 0.1), blurRadius: 30),
+            BoxShadow(color: sec.withValues(alpha: 0.1), blurRadius: 30),
           ],
         ),
         child: Column(
@@ -384,17 +385,24 @@ class _LevelStartDialog extends StatelessWidget {
               height: 64,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: data.status == LevelStatus.selesai
-                      ? const [
-                          AppTheme.greenDk,
-                          AppTheme.green,
-                          AppTheme.greenGl,
-                        ]
-                      : const [kBlue, kIris, kPurple],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: t.isDark
+                    ? (data.status == LevelStatus.selesai
+                        ? AppTheme.green
+                        : AppTheme.iris)
+                    : null,
+                gradient: t.isDark
+                    ? null
+                    : LinearGradient(
+                        colors: data.status == LevelStatus.selesai
+                            ? const [
+                                AppTheme.greenDk,
+                                AppTheme.green,
+                                AppTheme.greenGl,
+                              ]
+                            : const [kBlue, kIris, kPurple],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                 boxShadow: [
                   BoxShadow(
                     color: statusColor.withValues(alpha: 0.35),
@@ -426,16 +434,11 @@ class _LevelStartDialog extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               '$emoji ${data.topic}',
-              style: const TextStyle(
-                color: kIris,
+              style: TextStyle(
+                color: sec,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${data.questions} soal',
-              style: TextStyle(color: t.textMid, fontSize: 11),
             ),
             const SizedBox(height: 20),
             Container(width: double.infinity, height: 1, color: t.divider),
@@ -448,19 +451,19 @@ class _LevelStartDialog extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 decoration: BoxDecoration(
-                  color: kIris.withValues(alpha: 0.1),
+                  color: sec.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: kIris.withValues(alpha: 0.3)),
+                  border: Border.all(color: sec.withValues(alpha: 0.3)),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.menu_book_rounded, color: kIris, size: 18),
-                    SizedBox(width: 8),
+                    Icon(Icons.menu_book_rounded, color: sec, size: 18),
+                    const SizedBox(width: 8),
                     Text(
                       'Baca Materi Dulu',
                       style: TextStyle(
-                        color: kIris,
+                        color: sec,
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
                       ),
@@ -478,15 +481,18 @@ class _LevelStartDialog extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 13),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      AppTheme.greenDk,
-                      AppTheme.green,
-                      AppTheme.greenGl,
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
+                  color: t.isDark ? AppTheme.green : null,
+                  gradient: t.isDark
+                      ? null
+                      : const LinearGradient(
+                          colors: [
+                            AppTheme.greenDk,
+                            AppTheme.green,
+                            AppTheme.greenGl,
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -600,17 +606,17 @@ class _HomeHeader extends StatelessWidget {
             decoration: BoxDecoration(
               color: t.surface,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: kIris.withValues(alpha: 0.28)),
+              border: Border.all(color: t.secondary.withValues(alpha: 0.28)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.play_circle_rounded, size: 15, color: kIris),
+                Icon(Icons.play_circle_rounded, size: 15, color: t.secondary),
                 const SizedBox(width: 6),
                 Text(
                   'Level ${activeLevel.id}',
-                  style: const TextStyle(
-                    color: kIris,
+                  style: TextStyle(
+                    color: t.secondary,
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
@@ -668,6 +674,7 @@ class _LevelMap extends StatelessWidget {
                       rowHeight: _rowHeight,
                       topPadding: _topPadding,
                       dividerColor: t.divider,
+                      activeSegmentColor: t.secondary,
                     ),
                   ),
                 ),
@@ -717,7 +724,8 @@ class _LevelNode extends StatelessWidget {
     final locked = data.status == LevelStatus.terkunci;
     final active = data.status == LevelStatus.aktif;
     final complete = data.status == LevelStatus.selesai;
-    final statusColor = levelStatusColor(data.status);
+    final statusColor = levelStatusColor(data.status, isDark: t.isDark);
+    final sec = t.secondary;
     final mEmoji = _moduleEmojis[data.moduleIndex % _moduleEmojis.length];
 
     return GestureDetector(
@@ -732,7 +740,12 @@ class _LevelNode extends StatelessWidget {
             height: nodeSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: locked
+              color: locked
+                  ? t.surfaceB
+                  : (t.isDark
+                      ? (complete ? AppTheme.green : AppTheme.iris)
+                      : null),
+              gradient: locked || t.isDark
                   ? null
                   : LinearGradient(
                       colors: complete
@@ -745,7 +758,6 @@ class _LevelNode extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-              color: locked ? t.surfaceB : null,
               border: Border.all(
                 color: locked ? t.divider : statusColor.withValues(alpha: 0.7),
                 width: active ? 2.5 : 2,
@@ -815,30 +827,10 @@ class _LevelNode extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: locked ? t.textMid : kIris,
+              color: locked ? t.textMid : sec,
               fontSize: 10,
               fontWeight: FontWeight.w600,
             ),
-          ),
-          const SizedBox(height: 2),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.quiz_rounded,
-                size: 11,
-                color: locked ? t.textMid : t.textSec,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${data.questions} soal',
-                style: TextStyle(
-                  color: locked ? t.textMid : t.textSec,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
           ),
           if (complete) ...[
             const SizedBox(height: 4),
@@ -859,7 +851,7 @@ class _StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.watch<AppTheme>();
     final icon = levelStatusIcon(status);
-    final color = levelStatusColor(status);
+    final color = levelStatusColor(status, isDark: t.isDark);
     return Container(
       width: 24,
       height: 24,
@@ -902,6 +894,7 @@ class _LevelPathPainter extends CustomPainter {
   final List<LevelData> levels;
   final double width, slotWidth, nodeSize, rowHeight, topPadding;
   final Color dividerColor;
+  final Color activeSegmentColor;
 
   const _LevelPathPainter({
     required this.levels,
@@ -911,6 +904,7 @@ class _LevelPathPainter extends CustomPainter {
     required this.rowHeight,
     required this.topPadding,
     required this.dividerColor,
+    required this.activeSegmentColor,
   });
 
   @override
@@ -940,7 +934,7 @@ class _LevelPathPainter extends CustomPainter {
       final segColor = locked
           ? dividerColor
           : levels[i + 1].status == LevelStatus.aktif
-          ? kIris
+          ? activeSegmentColor
           : AppTheme.green;
 
       final shadowPaint = Paint()
@@ -979,7 +973,8 @@ class _LevelPathPainter extends CustomPainter {
   bool shouldRepaint(covariant _LevelPathPainter old) =>
       old.levels != levels ||
       old.width != width ||
-      old.dividerColor != dividerColor;
+      old.dividerColor != dividerColor ||
+      old.activeSegmentColor != activeSegmentColor;
 }
 
 // ── LEVEL GEOMETRY ────────────────────────────────────────────────────────────
@@ -1013,15 +1008,17 @@ class _MapBackdrop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.watch<AppTheme>();
+    if (t.isDark) return const SizedBox.shrink();
+
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            kIris.withValues(alpha: t.isDark ? 0.08 : 0.05),
+            kIris.withValues(alpha: 0.05),
             Colors.transparent,
-            AppTheme.green.withValues(alpha: t.isDark ? 0.04 : 0.06),
+            AppTheme.green.withValues(alpha: 0.06),
           ],
           stops: const [0.0, 0.45, 1.0],
         ),
@@ -1069,11 +1066,12 @@ class _DotGridPainter extends CustomPainter {
 }
 
 // ── STATUS HELPERS ────────────────────────────────────────────────────────────
-Color levelStatusColor(LevelStatus s) => s == LevelStatus.selesai
-    ? AppTheme.green
-    : s == LevelStatus.aktif
-    ? kBlue
-    : const Color(0xFF666888);
+Color levelStatusColor(LevelStatus s, {required bool isDark}) =>
+    s == LevelStatus.selesai
+        ? AppTheme.green
+        : s == LevelStatus.aktif
+        ? (isDark ? AppTheme.iris : kBlue)
+        : const Color(0xFF666888);
 String levelStatusLabel(LevelStatus s) => s == LevelStatus.selesai
     ? 'Selesai'
     : s == LevelStatus.aktif

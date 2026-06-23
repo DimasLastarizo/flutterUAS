@@ -61,6 +61,7 @@ enum LeaderboardPeriod { minggu, bulan, semua }
 
 class LeaderboardUser {
   final String name;
+  final String? username;
   final String initials;
   final int xp;
   final int level;
@@ -71,6 +72,7 @@ class LeaderboardUser {
 
   const LeaderboardUser({
     required this.name,
+    this.username,
     required this.initials,
     required this.xp,
     required this.level,
@@ -115,11 +117,11 @@ class _LeaderboardPageState extends State<LeaderboardPage>
   static const _podiumOrder = [1, 0, 2]; // display: 2nd, 1st, 3rd
   static const _podiumHeight = [64.0, 96.0, 48.0];
 
-  // Warna podium — dark mode
+  // Warna podium — dark mode (netral + hijau + iris)
   static const _podiumBgDark = [
-    Color(0xFF1E1535), // 2nd – ungu gelap
-    Color(0xFF201A06), // 1st – emas gelap
-    Color(0xFF1E1210), // 3rd – tembaga gelap
+    Color(0xFF1C1C2E), // 2nd
+    Color(0xFF1A2438), // 1st — iris tint on neutral
+    Color(0xFF181820), // 3rd
   ];
   // Warna podium — light mode
   static const _podiumBgLight = [
@@ -128,10 +130,10 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     Color(0xFFFFF0EB), // 3rd – tembaga/coral muda
   ];
 
-  static const _podiumText = [
-    Color(0xFFAA88FF), // 2nd – ungu terang
-    Color(0xFFFFB347), // 1st – amber/emas terang
-    Color(0xFFFF7055), // 3rd – coral/tembaga terang
+  static const _podiumTextDark = [
+    AppTheme.iris,   // 2nd
+    AppTheme.green,  // 1st
+    Color(0xFF9999BB), // 3rd — textSec dark
   ];
   // Teks podium di light mode harus lebih gelap agar kontras
   static const _podiumTextLight = [
@@ -140,17 +142,15 @@ class _LeaderboardPageState extends State<LeaderboardPage>
     Color(0xFFB33A1A), // 3rd – coral gelap
   ];
   static const _podiumBorderDark = [
-    Color(0xFF3D2A7A), // ungu
-    Color(0xFF7A5A12), // emas
-    Color(0xFF7A3020), // tembaga
+    Color(0xFF4A6FD4), // iris gelap
+    Color(0xFF1A9E55), // green gelap
+    Color(0xFF1E1E30), // divider
   ];
   static const _podiumBorderLight = [
     Color(0xFFBBA8EE), // ungu muda
     Color(0xFFE5C96A), // emas muda
     Color(0xFFE8A082), // tembaga muda
   ];
-  static const _medals = ['🥇', '🥈', '🥉'];
-
   List<LeaderboardUser> get _currentData =>
       context.watch<AppDataProvider>().leaderboard[_activePeriod] ??
       leaderboardFallback[_activePeriod] ??
@@ -249,55 +249,53 @@ class _LeaderboardPageState extends State<LeaderboardPage>
       backgroundColor: t.bg,
       body: Stack(
         children: [
-          // Ambient glow — adaptif terhadap mode
-          AnimatedBuilder(
-            animation: _glowPulse,
-            builder: (_, _) => Positioned(
-              top: -100,
-              left: -60,
-              child: Container(
-                width: 320,
-                height: 320,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppTheme.green.withValues(alpha: 
-                        t.isDark
-                            ? 0.05 + 0.03 * _glowPulse.value
-                            : 0.08 + 0.04 * _glowPulse.value,
-                      ),
-                      Colors.transparent,
-                    ],
+          // Ambient glow — light mode only (dark: netral flat)
+          if (!t.isDark) ...[
+            AnimatedBuilder(
+              animation: _glowPulse,
+              builder: (_, _) => Positioned(
+                top: -100,
+                left: -60,
+                child: Container(
+                  width: 320,
+                  height: 320,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppTheme.green.withValues(
+                          alpha: 0.08 + 0.04 * _glowPulse.value,
+                        ),
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          AnimatedBuilder(
-            animation: _glowPulse,
-            builder: (_, _) => Positioned(
-              top: 180,
-              right: -80,
-              child: Container(
-                width: 240,
-                height: 240,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppTheme.purple.withValues(alpha: 
-                        t.isDark
-                            ? 0.04 + 0.02 * (1 - _glowPulse.value)
-                            : 0.06 + 0.03 * (1 - _glowPulse.value),
-                      ),
-                      Colors.transparent,
-                    ],
+            AnimatedBuilder(
+              animation: _glowPulse,
+              builder: (_, _) => Positioned(
+                top: 180,
+                right: -80,
+                child: Container(
+                  width: 240,
+                  height: 240,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppTheme.cyan.withValues(
+                          alpha: 0.06 + 0.03 * (1 - _glowPulse.value),
+                        ),
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
           Positioned.fill(child: _GridDots()),
 
           SafeArea(
@@ -412,6 +410,8 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             final dataIdx = _podiumOrder[col];
             if (dataIdx >= _currentData.length) return const SizedBox.shrink();
             final user = _currentData[dataIdx];
+            final rank = dataIdx + 1;
+            final medal = _rankMedal(rank);
             final h = _podiumHeight[col] * _podiumAnim.value;
 
             final podiumBg = t.isDark
@@ -421,7 +421,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 ? _podiumBorderDark[col]
                 : _podiumBorderLight[col];
             final podiumTxt = t.isDark
-                ? _podiumText[col]
+                ? _podiumTextDark[col]
                 : _podiumTextLight[col];
             final borderColor = t.isDark
                 ? user.avatarText.withValues(alpha: 0.5)
@@ -435,7 +435,10 @@ class _LeaderboardPageState extends State<LeaderboardPage>
             return Expanded(
               child: Column(
                 children: [
-                  Text(_medals[col], style: const TextStyle(fontSize: 20)),
+                  if (medal != null)
+                    Text(medal, style: const TextStyle(fontSize: 20))
+                  else
+                    const SizedBox(height: 20),
                   const SizedBox(height: 6),
                   Container(
                     width: 46,
@@ -477,6 +480,20 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                  if (user.username != null && user.username!.isNotEmpty) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      '@${user.username}',
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: user.isMe ? t.secondary : t.textMid,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 2),
                   Text(
                     '${_fmtXp(user.xp)} XP',
@@ -601,12 +618,12 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: user.isMe
-                ? AppTheme.cyan.withValues(alpha: t.isDark ? 0.08 : 0.07)
+                ? t.secondary.withValues(alpha: t.isDark ? 0.08 : 0.07)
                 : t.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: user.isMe
-                  ? AppTheme.cyan.withValues(alpha: t.isDark ? 0.35 : 0.45)
+                  ? t.secondary.withValues(alpha: t.isDark ? 0.35 : 0.45)
                   : t.divider,
               width: user.isMe ? 1.2 : 1,
             ),
@@ -627,7 +644,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 child: Text(
                   '#$rank',
                   style: TextStyle(
-                    color: user.isMe ? AppTheme.cyan : t.textMid,
+                    color: user.isMe ? t.secondary : t.textMid,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -642,7 +659,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                   color: avatarBg,
                   border: Border.all(
                     color: user.isMe
-                        ? AppTheme.cyan.withValues(alpha: 0.5)
+                        ? t.secondary.withValues(alpha: 0.5)
                         : user.avatarText.withValues(alpha: t.isDark ? 0.25 : 0.4),
                     width: 1.5,
                   ),
@@ -684,12 +701,12 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                               vertical: 1,
                             ),
                             decoration: BoxDecoration(
-                              color: AppTheme.cyan.withValues(alpha: 
+                              color: t.secondary.withValues(alpha: 
                                 t.isDark ? 0.15 : 0.12,
                               ),
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                color: AppTheme.cyan.withValues(alpha: 
+                                color: t.secondary.withValues(alpha: 
                                   t.isDark ? 0.4 : 0.5,
                                 ),
                               ),
@@ -697,7 +714,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                             child: Text(
                               'Kamu',
                               style: TextStyle(
-                                color: AppTheme.cyan,
+                                color: t.secondary,
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -711,6 +728,15 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                       'Level ${user.level}',
                       style: TextStyle(color: t.textMid, fontSize: 11),
                     ),
+                    if (user.username != null && user.username!.isNotEmpty)
+                      Text(
+                        '@${user.username}',
+                        style: TextStyle(
+                          color: user.isMe ? t.secondary : t.textMid,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -739,7 +765,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                   Text(
                     _fmtXp(user.xp),
                     style: TextStyle(
-                      color: user.isMe ? AppTheme.cyan : t.textPri,
+                      color: user.isMe ? t.secondary : t.textPri,
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
@@ -769,13 +795,19 @@ class _LeaderboardPageState extends State<LeaderboardPage>
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: t.isDark
-                ? [AppTheme.green.withValues(alpha: 0.08), t.surfaceB]
-                : [AppTheme.green.withValues(alpha: 0.06), t.surface],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: t.isDark
+              ? t.surfaceB
+              : null,
+          gradient: t.isDark
+              ? null
+              : LinearGradient(
+                  colors: [
+                    AppTheme.green.withValues(alpha: 0.06),
+                    t.surface,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppTheme.green.withValues(alpha: t.isDark ? 0.25 : 0.3),

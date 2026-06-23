@@ -63,7 +63,6 @@ class KursusData {
   double progress;
   int modulesDone;
   CourseStatus status;
-  bool isFavorite;
   final String introVideoUrl;
   KursusData({
     required this.id,
@@ -82,7 +81,6 @@ class KursusData {
     required this.lastAccessed,
     required this.description,
     required this.totalStudents,
-    this.isFavorite = false,
     this.introVideoUrl = '',
   });
 }
@@ -453,31 +451,30 @@ class _MateriPageState extends State<MateriPage> with TickerProviderStateMixin {
       backgroundColor: t.bg,
       body: Stack(
         children: [
-          // ── Ambient glow ──
-          AnimatedBuilder(
-            animation: _glowAnim,
-            builder: (_, _) => Positioned(
-              top: -60,
-              right: -60,
-              child: Container(
-                width: 260,
-                height: 260,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppTheme.green.withValues(
-                        alpha: t.isDark
-                            ? (0.05 + 0.025 * _glowAnim.value)
-                            : (0.08 + 0.035 * _glowAnim.value),
-                      ),
-                      Colors.transparent,
-                    ],
+          // ── Ambient glow (light mode only) ──
+          if (!t.isDark)
+            AnimatedBuilder(
+              animation: _glowAnim,
+              builder: (_, _) => Positioned(
+                top: -60,
+                right: -60,
+                child: Container(
+                  width: 260,
+                  height: 260,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppTheme.green.withValues(
+                          alpha: 0.08 + 0.035 * _glowAnim.value,
+                        ),
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           Positioned.fill(child: _GridDots(isDark: t.isDark)),
           SafeArea(
             child: Column(
@@ -659,10 +656,6 @@ class _MateriPageState extends State<MateriPage> with TickerProviderStateMixin {
                           itemBuilder: (_, i) => _KursusCard(
                             data: _filtered[i],
                             onTap: () => _open(_filtered[i]),
-                            onFavorite: () => setState(
-                              () => _filtered[i].isFavorite =
-                                  !_filtered[i].isFavorite,
-                            ),
                           ),
                         ),
                 ),
@@ -733,11 +726,10 @@ class _MateriPageState extends State<MateriPage> with TickerProviderStateMixin {
 // ── KURSUS CARD ───────────────────────────────────────────────────────────────
 class _KursusCard extends StatefulWidget {
   final KursusData data;
-  final VoidCallback onTap, onFavorite;
+  final VoidCallback onTap;
   const _KursusCard({
     required this.data,
     required this.onTap,
-    required this.onFavorite,
   });
 
   @override
@@ -770,20 +762,14 @@ class _KursusCardState extends State<_KursusCard>
   Widget build(BuildContext context) {
     final t = context.watch<AppTheme>();
     final d = widget.data;
-    final headerStart = t.isDark ? d.accentStart : _lightAccentStart(d.id);
-    final headerEnd = t.isDark ? d.accentEnd : _lightAccentEnd(d.id);
-    final headerTitle = t.isDark ? const Color(0xFFF0F0FA) : t.textPri;
-    final headerDesc = t.isDark ? const Color(0xFF9999BB) : t.textSec;
-    final iconPanel = t.isDark ? Colors.black26 : t.surface;
+    final headerStart = t.isDark ? t.surfaceB : _lightAccentStart(d.id);
+    final headerEnd = t.isDark ? t.surfaceB : _lightAccentEnd(d.id);
+    final headerTitle = t.textPri;
+    final headerDesc = t.textSec;
+    final iconPanel = t.isDark ? t.surface : t.surface;
     final softOverlay = t.isDark
-        ? Colors.white.withValues(alpha: 0.03)
+        ? t.divider.withValues(alpha: 0.35)
         : AppTheme.green.withValues(alpha: 0.06);
-    final favoriteBg = t.isDark
-        ? Colors.black38
-        : t.surface.withValues(alpha: 0.9);
-    final favoriteColor = d.isFavorite
-        ? AppTheme.green
-        : (t.isDark ? Colors.white54 : t.textMid);
 
     return GestureDetector(
       onTapDown: (_) => _c.reverse(),
@@ -802,7 +788,7 @@ class _KursusCardState extends State<_KursusCard>
             boxShadow: [
               BoxShadow(
                 color: t.isDark
-                    ? AppTheme.green.withValues(alpha: 0.05)
+                    ? t.shadow.withValues(alpha: 0.4)
                     : t.shadow.withValues(alpha: 0.08),
                 blurRadius: 16,
               ),
@@ -810,15 +796,18 @@ class _KursusCardState extends State<_KursusCard>
           ),
           child: Column(
             children: [
-              // ── Card header with gradient ──
+              // ── Card header ──
               Container(
                 height: 100,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [headerStart, headerEnd],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: t.isDark ? t.surfaceB : null,
+                  gradient: t.isDark
+                      ? null
+                      : LinearGradient(
+                          colors: [headerStart, headerEnd],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(20),
                   ),
@@ -834,28 +823,6 @@ class _KursusCardState extends State<_KursusCard>
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: softOverlay,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: GestureDetector(
-                        onTap: widget.onFavorite,
-                        child: Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: favoriteBg,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            d.isFavorite
-                                ? Icons.bookmark_rounded
-                                : Icons.bookmark_border_rounded,
-                            color: favoriteColor,
-                            size: 15,
-                          ),
                         ),
                       ),
                     ),

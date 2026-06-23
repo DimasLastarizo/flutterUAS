@@ -5,6 +5,7 @@ import '../models/level_data.dart';
 import '../screens/quiz_page.dart';
 import '../screens/materi_page.dart';
 import '../screens/leaderboard_page.dart';
+import '../screens/app_theme.dart';
 
 class ContentService {
   static SupabaseClient get _client => Supabase.instance.client;
@@ -28,7 +29,7 @@ class ContentService {
         .from('game_levels')
         .select('*, materials!inner(course_id)')
         .eq('is_published', true)
-        .order('level_number');
+        .order('level_number', ascending: true);
 
     Map<int, Map<String, dynamic>> progress = {};
     if (userId != null) {
@@ -83,8 +84,8 @@ class ContentService {
         .from('questions')
         .select('*, game_levels!inner(level_number)')
         .eq('is_published', true)
-        .order('level_id')
-        .order('sort_order');
+        .order('level_id', ascending: true)
+        .order('sort_order', ascending: true);
 
     final result = <int, List<QuizQuestion>>{};
     for (final row in rows as List) {
@@ -110,7 +111,7 @@ class ContentService {
         .from('courses')
         .select()
         .eq('is_published', true)
-        .order('sort_order');
+        .order('sort_order', ascending: true);
 
     final list = rows as List;
     return [
@@ -124,11 +125,21 @@ class ContentService {
         .from('materials')
         .select('*, courses!inner(id, title)')
         .eq('is_published', true)
-        .order('course_id')
-        .order('sort_order');
+        .order('course_id', ascending: true)
+        .order('sort_order', ascending: true);
+
+    // Urutkan lagi di client: sort_order naik (materi 1 → 4).
+    // Tanpa ini, join/response kadang datang terbalik (4→1) di beberapa setup Supabase.
+    final rowList = (rows as List).map((e) => e as Map<String, dynamic>).toList();
+    rowList.sort((a, b) {
+      final byCourse =
+          (a['course_id'] as int).compareTo(b['course_id'] as int);
+      if (byCourse != 0) return byCourse;
+      return (a['sort_order'] as int).compareTo(b['sort_order'] as int);
+    });
 
     final result = <int, List<ModulMateri>>{};
-    for (final row in rows as List) {
+    for (final row in rowList) {
       final courseId = row['course_id'] as int;
       final courseTitle =
           (row['courses'] as Map<String, dynamic>)['title'] as String;
@@ -160,7 +171,11 @@ class ContentService {
   }
 
   static Future<Map<LeaderboardPeriod, List<LeaderboardUser>>>
-  fetchLeaderboard({String? currentUserId, String? currentUserName}) async {
+  fetchLeaderboard({
+    String? currentUserId,
+    String? currentUserName,
+    String? currentUserUsername,
+  }) async {
     final result = <LeaderboardPeriod, List<LeaderboardUser>>{};
     const periods = {
       LeaderboardPeriod.minggu: 'minggu',
@@ -169,14 +184,16 @@ class ContentService {
     };
 
     int? currentUserXp;
+    String? currentUsername = currentUserUsername;
     if (currentUserId != null) {
       final profile = await _client
           .from('profiles')
-          .select('xp, nama')
+          .select('xp, nama, username')
           .eq('id', currentUserId)
           .maybeSingle();
       if (profile != null) {
         currentUserXp = profile['xp'] as int? ?? 0;
+        currentUsername ??= profile['username'] as String?;
       }
     }
 
@@ -201,11 +218,13 @@ class ContentService {
       final uniqueUserIds = userIds.toSet().toList();
 
       final gameLevels = await _fetchGameLevelsForUsers(uniqueUserIds);
+      final usernames = await _fetchUsernames(uniqueUserIds);
 
       var users = [
         for (final row in rowList)
           LeaderboardUser(
             name: row['display_name'] as String,
+            username: usernames[row['user_id'] as String?],
             initials: row['initials'] as String,
             xp: row['xp'] as int,
             level: gameLevels[row['user_id'] as String?] ?? 1,
@@ -223,12 +242,13 @@ class ContentService {
           ...users,
           LeaderboardUser(
             name: currentUserName,
+            username: currentUsername,
             initials: _initials(currentUserName),
             xp: currentUserXp ?? 0,
             level: gameLevels[currentUserId] ?? 1,
             badges: const [],
-            avatarBg: const Color(0xFF081828),
-            avatarText: const Color(0xFF4E9DFF),
+            avatarBg: const Color(0xFF141828),
+            avatarText: AppTheme.iris,
             isMe: true,
           ),
         ];
@@ -238,6 +258,22 @@ class ContentService {
     }
 
     return result;
+  }
+
+  static Future<Map<String, String>> _fetchUsernames(
+    List<String> userIds,
+  ) async {
+    if (userIds.isEmpty) return {};
+
+    final rows = await _client
+        .from('profiles')
+        .select('id, username')
+        .inFilter('id', userIds);
+
+    return {
+      for (final row in rows as List)
+        row['id'] as String: row['username'] as String,
+    };
   }
 
   static Future<Map<String, int>> _fetchGameLevelsForUsers(

@@ -12,17 +12,16 @@
 //   2. Ambil instance di dalam build():
 //      final t = context.watch<AppTheme>();
 //
-//   3. Pakai warna dari t:
-//      color: t.bg           → background utama
-//      color: t.surface      → card/panel
-//      color: t.surfaceB     → item dalam card
-//      color: t.green        → aksen hijau utama
-//      color: t.greenDk      → hijau gelap
-//      color: t.greenGl      → hijau terang/glow
-//      color: t.cyan         → aksen biru
-//      color: t.cyanDk       → biru gelap
-//      color: t.cyanGl       → biru terang
-//      color: t.purple       → ungu
+//   3. Pakai warna dari t (dark = 3 palet: netral + hijau + iris):
+//      color: t.bg           → netral gelap (background)
+//      color: t.surface      → netral gelap (card/panel)
+//      color: t.surfaceB     → netral gelap (item dalam card)
+//      color: t.green        → aksen primary (hijau)
+//      color: t.secondary    → aksen secondary (iris di dark, cyan di light)
+//      color: t.secondaryDk  → secondary gelap
+//      color: t.secondaryGl  → secondary terang
+//      color: t.cyan         → light mode only (legacy)
+//      color: t.purple       → light mode only (legacy)
 //      color: t.divider      → garis pemisah
 //      color: t.textPri      → teks utama
 //      color: t.textSec      → teks sekunder
@@ -80,13 +79,20 @@ class AppTheme extends ChangeNotifier {
   static const Color _lRedBorder = Color(0xFFFFCCCC);
   static const Color _lShadow    = Color(0xFFB0B8D0);
 
-  // ─── SHARED COLORS (sama di kedua mode) ─────────────────────────────
+  // ─── BRAND PRIMARY (hijau — kedua mode) ─────────────────────────────
   static const Color green     = Color(0xFF2ECC71);
   static const Color greenDk   = Color(0xFF1A9E55);
   static const Color greenGl   = Color(0xFF00E676);
+
+  // ─── SECONDARY — dark: iris | light: cyan (light tidak diubah) ─────
+  static const Color iris      = Color(0xFF7B9FFF);
+  static const Color irisDk    = Color(0xFF4A6FD4);
+  static const Color irisGl    = Color(0xFF9EB5FF);
   static const Color cyan      = Color(0xFF4FC3F7);
   static const Color cyanDk    = Color(0xFF0288D1);
   static const Color cyanGl    = Color(0xFF64B5F6);
+
+  // Legacy shared (light / fallback)
   static const Color purple    = Color(0xFFAA88FF);
   static const Color red       = Color(0xFFFF6B6B);
 
@@ -102,13 +108,26 @@ class AppTheme extends ChangeNotifier {
   Color get redBorder => _isDark ? _dRedBorder : _lRedBorder;
   Color get shadow    => _isDark ? _dShadow    : _lShadow;
 
+  /// Aksen sekunder: iris (dark) / cyan (light).
+  Color get secondary   => _isDark ? iris   : cyan;
+  Color get secondaryDk => _isDark ? irisDk : cyanDk;
+  Color get secondaryGl => _isDark ? irisGl : cyanGl;
+
+  /// Warna badge rank profil per tier (0–4).
+  Color badgeColorForTier(int tierIndex) {
+    const light = [greenGl, cyan, green, cyanGl, purple];
+    const dark = [greenGl, iris, green, irisGl, irisDk];
+    final palette = _isDark ? dark : light;
+    return palette[tierIndex.clamp(0, palette.length - 1)];
+  }
+
   // Shorthand agar kode halaman lebih ringkas
   Color get g  => green;
   Color get gd => greenDk;
   Color get gg => greenGl;
-  Color get c  => cyan;
-  Color get cd => cyanDk;
-  Color get cg => cyanGl;
+  Color get c  => secondary;
+  Color get cd => secondaryDk;
+  Color get cg => secondaryGl;
 
   // ─── MaterialApp ThemeData helper ────────────────────────────────────
   ThemeData get materialTheme => ThemeData(
@@ -118,7 +137,7 @@ class AppTheme extends ChangeNotifier {
       brightness:    _isDark ? Brightness.dark : Brightness.light,
       primary:       green,
       onPrimary:     Colors.black,
-      secondary:     cyan,
+      secondary:     secondary,
       onSecondary:   Colors.black,
       error:         red,
       onError:       Colors.white,

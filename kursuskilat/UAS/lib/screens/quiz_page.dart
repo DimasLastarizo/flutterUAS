@@ -544,22 +544,23 @@ class _LevelQuizPageState extends State<LevelQuizPage> {
       body: Stack(
         children: [
           Positioned.fill(child: _QuizDotGrid(isDark: t.isDark)),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    kIris.withValues(alpha: t.isDark ? 0.08 : 0.05),
-                    Colors.transparent,
-                    AppTheme.green.withValues(alpha: t.isDark ? 0.04 : 0.06),
-                  ],
-                  stops: const [0.0, 0.45, 1.0],
+          if (!t.isDark)
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      kIris.withValues(alpha: 0.05),
+                      Colors.transparent,
+                      AppTheme.green.withValues(alpha: 0.06),
+                    ],
+                    stops: const [0.0, 0.45, 1.0],
+                  ),
                 ),
               ),
             ),
-          ),
           SafeArea(
             child: Column(
               children: [
@@ -832,20 +833,20 @@ class _QuizProgressCard extends StatelessWidget {
               _InfoChip(
                 icon: levelStatusIcon(level.status),
                 label: levelStatusLabel(level.status),
-                color: levelStatusColor(level.status),
+                color: levelStatusColor(level.status, isDark: t.isDark),
               ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: kIris.withValues(alpha: 0.1),
+                  color: t.secondary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: kIris.withValues(alpha: 0.2)),
+                  border: Border.all(color: t.secondary.withValues(alpha: 0.2)),
                 ),
                 child: Text(
                   'Modul ${level.moduleIndex + 1}',
-                  style: const TextStyle(
-                    color: kIris,
+                  style: TextStyle(
+                    color: t.secondary,
                     fontSize: 9,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
@@ -920,11 +921,18 @@ class _QuestionCard extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppTheme.greenDk, AppTheme.green, AppTheme.greenGl],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: t.isDark ? AppTheme.green : null,
+              gradient: t.isDark
+                  ? null
+                  : const LinearGradient(
+                      colors: [
+                        AppTheme.greenDk,
+                        AppTheme.green,
+                        AppTheme.greenGl,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
               borderRadius: BorderRadius.circular(11),
             ),
             child: Icon(Icons.psychology_rounded, color: t.bg, size: 22),
@@ -970,7 +978,7 @@ class _AnswerOption extends StatelessWidget {
         : wrong
         ? _kWrong
         : selected
-        ? kBlue
+        ? (t.isDark ? t.secondary : kBlue)
         : t.divider;
     final label = String.fromCharCode(65 + index);
 

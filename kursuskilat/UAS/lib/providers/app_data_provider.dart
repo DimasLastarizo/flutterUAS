@@ -39,6 +39,7 @@ class AppDataProvider extends ChangeNotifier {
 
     final profile = await AuthService.fetchProfile();
     final userName = profile?['nama'] as String?;
+    final username = profile?['username'] as String?;
 
     if (profile != null) {
       userXp = profile['xp'] as int? ?? 0;
@@ -55,6 +56,7 @@ class AppDataProvider extends ChangeNotifier {
       final fetchedLeaderboard = await ContentService.fetchLeaderboard(
         currentUserId: userId,
         currentUserName: userName,
+        currentUserUsername: username,
       );
 
       if (fetchedLevels.isNotEmpty) {
@@ -90,6 +92,7 @@ class AppDataProvider extends ChangeNotifier {
       }
       final profile = await AuthService.fetchProfile();
       final userName = profile?['nama'] as String?;
+      final username = profile?['username'] as String?;
       if (profile != null) {
         userXp = profile['xp'] as int? ?? userXp;
         userLevel = profile['level'] as int? ?? userLevel;
@@ -99,6 +102,7 @@ class AppDataProvider extends ChangeNotifier {
       final fetchedLeaderboard = await ContentService.fetchLeaderboard(
         currentUserId: userId,
         currentUserName: userName,
+        currentUserUsername: username,
       );
       if (fetchedLeaderboard.isNotEmpty) leaderboard = fetchedLeaderboard;
       notifyListeners();
