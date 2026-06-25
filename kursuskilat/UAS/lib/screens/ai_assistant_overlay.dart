@@ -14,7 +14,7 @@ const _textMid  = Color(0xFF666888);
 const _iris     = Color(0xFF7B9FFF);
 const _irisDk   = Color(0xFF4A6FD4);
 
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // 🔑 KONFIGURASI API KEY — GANTI DI SINI
 //  1. Buka https://console.groq.com/keys
 //  2. Login / daftar (gratis, tidak perlu kartu kredit)

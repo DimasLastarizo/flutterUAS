@@ -2,7 +2,6 @@
 // Berisi: GroqService, SimulatedVideoPlayer, AiTutorChat, ModuleDetailPage
 // Pasangan: materi_page.dart
 // ✅ Light/Dark mode via AppTheme (provider)
-// ✅ FIX: keyboard tidak menutupi input field
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -111,7 +110,7 @@ class _YouTubePlayerWidgetState extends State<YouTubePlayerWidget> {
       _controller?.dispose();
       _controller = null;
       _initializePlayer();
-      setState(() {});
+      setState(() {}); // Rebuild to show the new player or placeholder
     }
   }
 
@@ -124,9 +123,10 @@ class _YouTubePlayerWidgetState extends State<YouTubePlayerWidget> {
   @override
   Widget build(BuildContext context) {
     if (_controller == null) {
+      // Placeholder when URL is empty or invalid
       final t = context.watch<AppTheme>();
       return Container(
-        height: 200,
+        height: 200, // Adjust height as needed
         decoration: BoxDecoration(
           color: t.isDark ? const Color(0xFF0D0D18) : t.surfaceB,
           borderRadius: BorderRadius.circular(16),
@@ -152,16 +152,17 @@ class _YouTubePlayerWidgetState extends State<YouTubePlayerWidget> {
         showVideoProgressIndicator: true,
         progressIndicatorColor: AppTheme.green,
         onReady: () {},
+        // onEnded: (metaData) {},
       );
     }
   }
 }
 
-// ── SIMULATED VIDEO PLAYER ────────────────────────────────────────────────────
+// ── SIMULATED VIDEO PLAYER (now just a placeholder for non-YouTube or empty URLs) ──────────────────────────────────
 class SimulatedVideoPlayer extends StatelessWidget {
   final String title, emoji;
   final Color accentColor;
-  final String introVideoUrl;
+  final String introVideoUrl; // Keep this for potential future non-YouTube videos
   final VoidCallback? onComplete;
   const SimulatedVideoPlayer({
     super.key,
@@ -180,6 +181,7 @@ class SimulatedVideoPlayer extends StatelessWidget {
     if (youtubeVideoId != null) {
       return YouTubePlayerWidget(youtubeVideoId: youtubeVideoId);
     } else {
+      // Existing placeholder for empty or non-YouTube URLs
       return Container(
         decoration: BoxDecoration(
           color: t.isDark ? const Color(0xFF0D0D18) : t.surfaceB,
@@ -192,48 +194,50 @@ class SimulatedVideoPlayer extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             child: Stack(children: [
               Container(
-                decoration: BoxDecoration(
-                  color: t.isDark ? t.surfaceB : null,
-                  gradient: t.isDark
-                      ? null
-                      : LinearGradient(
-                    colors: [
-                      accentColor.withValues(alpha: 0.10),
-                      t.surfaceB,
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                  decoration: BoxDecoration(
+                      color: t.isDark
+                          ? t.surfaceB
+                          : null,
+                      gradient: t.isDark
+                          ? null
+                          : LinearGradient(
+                              colors: [
+                                accentColor.withValues(alpha: 0.10),
+                                t.surfaceB,
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
                   ),
-                ),
               ),
               Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(emoji, style: const TextStyle(fontSize: 56)),
-                    const SizedBox(height: 12),
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: t.textPri,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800),
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(emoji, style: const TextStyle(fontSize: 56)),
+                        const SizedBox(height: 12),
+                        Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: t.textPri,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 8),
+                        if (introVideoUrl.isNotEmpty)
+                          _badge(
+                            t.isDark ? t.secondary : AppTheme.cyan,
+                            'URL VIDEO TERHUBUNG',
+                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Video tidak tersedia atau tidak didukung',
+                          style: TextStyle(color: t.textMid, fontSize: 12),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    if (introVideoUrl.isNotEmpty)
-                      _badge(
-                        t.isDark ? t.secondary : AppTheme.cyan,
-                        'URL VIDEO TERHUBUNG',
-                      ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Video tidak tersedia atau tidak didukung',
-                      style: TextStyle(color: t.textMid, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
             ]),
           ),
         ),
@@ -254,6 +258,9 @@ class SimulatedVideoPlayer extends StatelessWidget {
               fontWeight: FontWeight.w800,
               letterSpacing: 1.2)));
 }
+
+
+
 
 // ── AI TUTOR CHAT ─────────────────────────────────────────────────────────────
 class AiTutorChat extends StatefulWidget {
@@ -308,13 +315,6 @@ class _AiTutorChatState extends State<AiTutorChat> {
         }
       });
 
-  // ── FIX: scroll ke bawah setelah keyboard muncul ──
-  void _onTextFieldTap() {
-    if (_expanded) {
-      Future.delayed(const Duration(milliseconds: 350), _scrollDown);
-    }
-  }
-
   Future<void> _send(String text) async {
     if (text.trim().isEmpty || _typing) return;
     _ctrl.clear();
@@ -355,8 +355,6 @@ class _AiTutorChatState extends State<AiTutorChat> {
   @override
   Widget build(BuildContext context) {
     final t = context.watch<AppTheme>();
-    // ── FIX: ambil tinggi keyboard dari MediaQuery ──
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
       decoration: BoxDecoration(
@@ -383,9 +381,9 @@ class _AiTutorChatState extends State<AiTutorChat> {
                     gradient: t.isDark
                         ? null
                         : LinearGradient(colors: [
-                      const Color(0xFF4A6FD4).withValues(alpha: 0.1),
-                      _purple.withValues(alpha: 0.07),
-                    ]),
+                            const Color(0xFF4A6FD4).withValues(alpha: 0.1),
+                            _purple.withValues(alpha: 0.07),
+                          ]),
                     borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(16),
                         topRight: const Radius.circular(16),
@@ -400,13 +398,13 @@ class _AiTutorChatState extends State<AiTutorChat> {
                           gradient: t.isDark
                               ? null
                               : const LinearGradient(
-                            colors: [
-                              Color(0xFF4A6FD4),
-                              Color(0xFF9B6FE8),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                                  colors: [
+                                    Color(0xFF4A6FD4),
+                                    Color(0xFF9B6FE8),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
                           borderRadius: BorderRadius.circular(10)),
                       child: const Center(
                           child:
@@ -515,11 +513,11 @@ class _AiTutorChatState extends State<AiTutorChat> {
                                             gradient: t.isDark
                                                 ? null
                                                 : const LinearGradient(
-                                              colors: [
-                                                Color(0xFF4A6FD4),
-                                                Color(0xFF9B6FE8),
-                                              ],
-                                            ),
+                                                    colors: [
+                                                      Color(0xFF4A6FD4),
+                                                      Color(0xFF9B6FE8),
+                                                    ],
+                                                  ),
                                             borderRadius:
                                             BorderRadius.circular(
                                                 8)),
@@ -538,22 +536,22 @@ class _AiTutorChatState extends State<AiTutorChat> {
                                           decoration: BoxDecoration(
                                               color: isUser
                                                   ? (t.isDark
-                                                  ? AppTheme.irisDk
-                                                  : null)
+                                                      ? AppTheme.irisDk
+                                                      : null)
                                                   : (t.isDark
-                                                  ? t.surfaceB
-                                                  : t.surface),
+                                                      ? t.surfaceB
+                                                      : t.surface),
                                               gradient: isUser && !t.isDark
                                                   ? const LinearGradient(
-                                                colors: [
-                                                  Color(0xFF4A6FD4),
-                                                  Color(0xFF7B5FCC),
-                                                ],
-                                                begin: Alignment
-                                                    .topLeft,
-                                                end: Alignment
-                                                    .bottomRight,
-                                              )
+                                                      colors: [
+                                                        Color(0xFF4A6FD4),
+                                                        Color(0xFF7B5FCC),
+                                                      ],
+                                                      begin: Alignment
+                                                          .topLeft,
+                                                      end: Alignment
+                                                          .bottomRight,
+                                                    )
                                                   : null,
                                               borderRadius:
                                               BorderRadius.only(
@@ -574,8 +572,8 @@ class _AiTutorChatState extends State<AiTutorChat> {
                                                   ? null
                                                   : Border.all(
                                                   color: _iris
-                                                      .withValues(alpha:
-                                                  0.2))),
+                                                      .withValues(alpha: 
+                                                      0.2))),
                                           child: loading
                                               ? _LoadingDots()
                                               : _RichText(
@@ -585,95 +583,89 @@ class _AiTutorChatState extends State<AiTutorChat> {
                                 ]));
                       })),
 
-              // ── FIX: Input bar dengan padding keyboard-aware ──
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                curve: Curves.easeOut,
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                decoration: BoxDecoration(
-                    border: Border(
-                        top: BorderSide(color: t.divider))),
-                child: Row(children: [
-                  Expanded(
-                      child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12),
-                          decoration: BoxDecoration(
-                              color: t.surface,
-                              borderRadius:
-                              BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: _typing
-                                      ? _iris.withValues(alpha: 0.4)
-                                      : t.divider)),
-                          child: TextField(
-                              controller: _ctrl,
-                              style: TextStyle(
-                                  color: t.isDark
-                                      ? Colors.white
-                                      : Colors.black87,
-                                  fontSize: 12),
-                              cursorColor: _iris,
-                              maxLines: 2,
-                              minLines: 1,
-                              textInputAction: TextInputAction.send,
-                              // ── FIX: scroll ke bawah saat field di-tap ──
-                              onTap: _onTextFieldTap,
-                              onSubmitted: (txt) {
-                                if (!_typing) _send(txt);
-                              },
-                              decoration: InputDecoration(
-                                  hintText: 'Tanya sesuatu...',
-                                  hintStyle: TextStyle(
-                                      color: t.textMid,
-                                      fontSize: 11),
-                                  border: InputBorder.none,
-                                  contentPadding:
-                                  const EdgeInsets.symmetric(
-                                      vertical: 9))))),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                      onTap: _typing
-                          ? null
-                          : () => _send(_ctrl.text),
-                      child: Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                              borderRadius:
-                              BorderRadius.circular(11),
-                              color: _typing
-                                  ? t.surfaceB
-                                  : (t.isDark
-                                  ? AppTheme.iris
-                                  : null),
-                              gradient: _typing || t.isDark
-                                  ? null
-                                  : const LinearGradient(
-                                  colors: [
-                                    Color(0xFF4A6FD4),
-                                    Color(0xFF9B6FE8)
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight),
-                              boxShadow: _typing
-                                  ? null
-                                  : [
-                                BoxShadow(
-                                    color: _iris
-                                        .withValues(alpha: 0.3),
-                                    blurRadius: 8)
-                              ]),
-                          child: Icon(
-                              _typing
-                                  ? Icons.hourglass_top_rounded
-                                  : Icons.send_rounded,
-                              color: _typing
-                                  ? t.textMid
-                                  : Colors.white,
-                              size: 16))),
-                ]),
-              ),
+              // Input bar
+              Container(
+                  padding:
+                  const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                  decoration: BoxDecoration(
+                      border: Border(
+                          top: BorderSide(color: t.divider))),
+                  child: Row(children: [
+                    Expanded(
+                        child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12),
+                            decoration: BoxDecoration(
+                                color: t.surface,
+                                borderRadius:
+                                BorderRadius.circular(20),
+                                border: Border.all(
+                                    color: _typing
+                                        ? _iris.withValues(alpha: 0.4)
+                                        : t.divider)),
+                            child: TextField(
+                                controller: _ctrl,
+                                style: TextStyle(
+                                    color: t.textPri,
+                                    fontSize: 12),
+                                maxLines: 2,
+                                minLines: 1,
+                                textInputAction:
+                                TextInputAction.send,
+                                onSubmitted: (txt) {
+                                  if (!_typing) _send(txt);
+                                },
+                                decoration: InputDecoration(
+                                    hintText:
+                                    'Tanya sesuatu...',
+                                    hintStyle: TextStyle(
+                                        color: t.textMid,
+                                        fontSize: 11),
+                                    border: InputBorder.none,
+                                    contentPadding:
+                                    const EdgeInsets.symmetric(
+                                        vertical: 9))))),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                        onTap: _typing
+                            ? null
+                            : () => _send(_ctrl.text),
+                        child: Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                                borderRadius:
+                                BorderRadius.circular(11),
+                                color: _typing
+                                    ? t.surfaceB
+                                    : (t.isDark ? AppTheme.iris : null),
+                                gradient: _typing || t.isDark
+                                    ? null
+                                    : const LinearGradient(
+                                    colors: [
+                                      Color(0xFF4A6FD4),
+                                      Color(0xFF9B6FE8)
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end:
+                                    Alignment.bottomRight),
+                                boxShadow: _typing
+                                    ? null
+                                    : [
+                                  BoxShadow(
+                                      color: _iris
+                                          .withValues(alpha: 0.3),
+                                      blurRadius: 8)
+                                ]),
+                            child: Icon(
+                                _typing
+                                    ? Icons.hourglass_top_rounded
+                                    : Icons.send_rounded,
+                                color: _typing
+                                    ? t.textMid
+                                    : Colors.white,
+                                size: 16))),
+                  ])),
             ])
                 : const SizedBox.shrink()),
       ]),
@@ -822,6 +814,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
   final _scroll = ScrollController();
   final _tabScroll = ScrollController();
 
+  // Light mode: variasi warna per modul. Dark mode: hijau + iris saja.
   static const _accentPalette = [
     AppTheme.green,
     _blue,
@@ -910,8 +903,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
       backgroundColor: t.bg,
       extendBody: true,
       extendBodyBehindAppBar: true,
-      // ── FIX: hilangkan resizeToAvoidBottomInset: false
-      // Default-nya true → Flutter otomatis resize saat keyboard muncul
+      resizeToAvoidBottomInset: false,
       body: Column(children: [
         _topNav(t),
         Expanded(child: _content(t)),
@@ -991,7 +983,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
     );
   }
 
-  // ── Module tab bar ──
+  // ── Module tab bar (materi lanjutan: indeks 1..n-1) ──
   Widget _moduleTabBar(AppTheme t) {
     if (_modules.length <= 1) return const SizedBox.shrink();
 
@@ -1075,9 +1067,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
     return SingleChildScrollView(
       controller: _scroll,
       physics: const BouncingScrollPhysics(),
-      // ── FIX: padding bawah agar konten tidak tertutup keyboard
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         SimulatedVideoPlayer(
           title: widget.course.introVideoUrl.isNotEmpty
@@ -1112,8 +1102,6 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
             courseTitle: widget.course.title,
             moduleName: aiModule.title,
             subTitle: aiSub.title),
-        // ── FIX: spacer ekstra di bawah agar AiTutorChat
-        // tidak tertutup keyboard saat expanded
       ]),
     );
   }
@@ -1139,7 +1127,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
     return '${widget.course.description}\n\nMateri ini disiapkan sebagai bacaan teori sebelum atau saat player mengerjakan soal pilihan ganda. Fokusnya adalah memahami definisi, fungsi, hubungan antar konsep, dan alasan sebuah konsep digunakan.\n\nGunakan bacaan utama ini sebagai fondasi, lalu lanjutkan ke daftar materi lanjutan untuk membaca pembahasan yang lebih spesifik.';
   }
 
-  // ── Main reading card ──
+  // ── Main reading card (selalu materi pertama / sort_order terkecil) ──
   Widget _mainReading(AppTheme t) {
     final s = _primarySub;
     final title = _primaryModule.title;
