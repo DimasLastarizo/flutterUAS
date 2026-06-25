@@ -73,60 +73,133 @@ class GroqService {
   }
 }
 
-class YouTubePlayerWidget extends StatefulWidget {
-  final String? youtubeVideoId;
-  const YouTubePlayerWidget({super.key, required this.youtubeVideoId});
+// ── FULLSCREEN LANDSCAPE VIDEO (route terpisah, hindari konflik orientasi) ───
+class _LandscapeVideoPage extends StatefulWidget {
+  final String videoId;
+  final int startAtSeconds;
+
+  const _LandscapeVideoPage({
+    required this.videoId,
+    required this.startAtSeconds,
+  });
 
   @override
-  State<YouTubePlayerWidget> createState() => _YouTubePlayerWidgetState();
+  State<_LandscapeVideoPage> createState() => _LandscapeVideoPageState();
 }
 
-class _YouTubePlayerWidgetState extends State<YouTubePlayerWidget> {
-  YoutubePlayerController? _controller;
+class _LandscapeVideoPageState extends State<_LandscapeVideoPage> {
+  late YoutubePlayerController _controller;
 
   @override
   void initState() {
     super.initState();
-    _initializePlayer();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _controller = YoutubePlayerController(
+      initialVideoId: widget.videoId,
+      flags: YoutubePlayerFlags(
+        autoPlay: true,
+        mute: false,
+        enableCaption: false,
+        startAt: widget.startAtSeconds,
+      ),
+    );
   }
 
-  void _initializePlayer() {
-    if (widget.youtubeVideoId != null && widget.youtubeVideoId!.isNotEmpty) {
-      _controller = YoutubePlayerController(
-        initialVideoId: widget.youtubeVideoId!,
-        flags: const YoutubePlayerFlags(
-          autoPlay: false,
-          mute: false,
-          enableCaption: false,
-        ),
-      );
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant YouTubePlayerWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.youtubeVideoId != oldWidget.youtubeVideoId) {
-      _controller?.dispose();
-      _controller = null;
-      _initializePlayer();
-      setState(() {}); // Rebuild to show the new player or placeholder
-    }
+  void _exitFullscreen() {
+    Navigator.of(context).pop();
   }
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller.dispose();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: SystemUiOverlay.values,
+    );
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_controller == null) {
-      // Placeholder when URL is empty or invalid
-      final t = context.watch<AppTheme>();
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _exitFullscreen();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(
+              child: YoutubePlayer(
+                controller: _controller,
+                showVideoProgressIndicator: true,
+                progressIndicatorColor: AppTheme.green,
+                bottomActions: [
+                  const CurrentPosition(),
+                  const ProgressBar(isExpanded: true),
+                  const RemainingDuration(),
+                  IconButton(
+                    icon: const Icon(Icons.fullscreen_exit, color: Colors.white),
+                    onPressed: _exitFullscreen,
+                  ),
+                ],
+              ),
+            ),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: _exitFullscreen,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── SIMULATED VIDEO PLAYER (placeholder for non-YouTube or empty URLs) ───────
+class SimulatedVideoPlayer extends StatelessWidget {
+  final String title, emoji;
+  final Color accentColor;
+  final String introVideoUrl; // Keep this for potential future non-YouTube videos
+  final Widget? introVideoPlayer;
+  final VoidCallback? onComplete;
+  const SimulatedVideoPlayer({
+    super.key,
+    required this.title,
+    required this.emoji,
+    required this.accentColor,
+    this.introVideoUrl = '',
+    this.introVideoPlayer,
+    this.onComplete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (introVideoPlayer != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: introVideoPlayer,
+      );
+    }
+
+    final t = context.watch<AppTheme>();
+    String? youtubeVideoId = YoutubePlayer.convertUrlToId(introVideoUrl);
+
+    if (youtubeVideoId != null) {
       return Container(
-        height: 200, // Adjust height as needed
+        height: 200,
         decoration: BoxDecoration(
           color: t.isDark ? const Color(0xFF0D0D18) : t.surfaceB,
           borderRadius: BorderRadius.circular(16),
@@ -139,110 +212,76 @@ class _YouTubePlayerWidgetState extends State<YouTubePlayerWidget> {
               Icon(Icons.ondemand_video_rounded, color: t.textMid, size: 50),
               const SizedBox(height: 10),
               Text(
-                'Tidak ada video pengantar',
+                'Memuat video pengantar...',
                 style: TextStyle(color: t.textMid, fontSize: 16),
               ),
             ],
           ),
         ),
       );
-    } else {
-      return YoutubePlayer(
-        controller: _controller!,
-        showVideoProgressIndicator: true,
-        progressIndicatorColor: AppTheme.green,
-        onReady: () {},
-        // onEnded: (metaData) {},
-      );
     }
-  }
-}
 
-// ── SIMULATED VIDEO PLAYER (now just a placeholder for non-YouTube or empty URLs) ──────────────────────────────────
-class SimulatedVideoPlayer extends StatelessWidget {
-  final String title, emoji;
-  final Color accentColor;
-  final String introVideoUrl; // Keep this for potential future non-YouTube videos
-  final VoidCallback? onComplete;
-  const SimulatedVideoPlayer({
-    super.key,
-    required this.title,
-    required this.emoji,
-    required this.accentColor,
-    this.introVideoUrl = '',
-    this.onComplete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.watch<AppTheme>();
-    String? youtubeVideoId = YoutubePlayer.convertUrlToId(introVideoUrl);
-
-    if (youtubeVideoId != null) {
-      return YouTubePlayerWidget(youtubeVideoId: youtubeVideoId);
-    } else {
-      // Existing placeholder for empty or non-YouTube URLs
-      return Container(
-        decoration: BoxDecoration(
-          color: t.isDark ? const Color(0xFF0D0D18) : t.surfaceB,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: accentColor.withValues(alpha: 0.3)),
-        ),
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Stack(children: [
-              Container(
-                  decoration: BoxDecoration(
-                      color: t.isDark
-                          ? t.surfaceB
-                          : null,
-                      gradient: t.isDark
-                          ? null
-                          : LinearGradient(
-                              colors: [
-                                accentColor.withValues(alpha: 0.10),
-                                t.surfaceB,
-                              ],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                            ),
-                  ),
-              ),
-              Center(
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(emoji, style: const TextStyle(fontSize: 56)),
-                        const SizedBox(height: 12),
-                        Text(
-                          title,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: t.textPri,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 8),
-                        if (introVideoUrl.isNotEmpty)
-                          _badge(
-                            t.isDark ? t.secondary : AppTheme.cyan,
-                            'URL VIDEO TERHUBUNG',
+    // Placeholder for empty or non-YouTube URLs
+    return Container(
+      decoration: BoxDecoration(
+        color: t.isDark ? const Color(0xFF0D0D18) : t.surfaceB,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+      ),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: Stack(children: [
+            Container(
+                decoration: BoxDecoration(
+                    color: t.isDark
+                        ? t.surfaceB
+                        : null,
+                    gradient: t.isDark
+                        ? null
+                        : LinearGradient(
+                            colors: [
+                              accentColor.withValues(alpha: 0.10),
+                              t.surfaceB,
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
                           ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Video tidak tersedia atau tidak didukung',
-                          style: TextStyle(color: t.textMid, fontSize: 12),
+                ),
+            ),
+            Center(
+                child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(emoji, style: const TextStyle(fontSize: 56)),
+                      const SizedBox(height: 12),
+                      Text(
+                        title,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: t.textPri,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 8),
+                      if (introVideoUrl.isNotEmpty)
+                        _badge(
+                          t.isDark ? t.secondary : AppTheme.cyan,
+                          'URL VIDEO TERHUBUNG',
                         ),
-                      ],
-                    ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Video tidak tersedia atau tidak didukung',
+                        style: TextStyle(color: t.textMid, fontSize: 12),
+                      ),
+                    ],
                   ),
-            ]),
-          ),
+                ),
+          ]),
         ),
-      );
-    }
+      ),
+    );
   }
 
   Widget _badge(Color c, String text) => Container(
@@ -813,6 +852,10 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
   late int _mi;
   final _scroll = ScrollController();
   final _tabScroll = ScrollController();
+  final _selectedMaterialKey = GlobalKey();
+  bool _needsInitialScroll = false;
+  bool _dbModulesApplied = false;
+  YoutubePlayerController? _youtubeController;
 
   // Light mode: variasi warna per modul. Dark mode: hijau + iris saja.
   static const _accentPalette = [
@@ -831,11 +874,45 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
   @override
   void initState() {
     super.initState();
+    _initYoutubeController();
     _modules = buildModules(widget.course.title);
     _mi = _resolveInitialModuleIndex(_modules.length);
+    _needsInitialScroll = (widget.initialModuleIndex ?? 0) > 0 && _mi > 0;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_mi > 0) _scrollTabToIndex(_mi);
+      _scrollToSelectedMaterialIfNeeded();
     });
+  }
+
+  void _initYoutubeController() {
+    final videoId =
+        YoutubePlayer.convertUrlToId(widget.course.introVideoUrl);
+    if (videoId == null || videoId.isEmpty) return;
+    _youtubeController = YoutubePlayerController(
+      initialVideoId: videoId,
+      flags: const YoutubePlayerFlags(
+        autoPlay: false,
+        mute: false,
+        enableCaption: false,
+      ),
+    );
+  }
+
+  void _openLandscapeVideo() {
+    final videoId = YoutubePlayer.convertUrlToId(widget.course.introVideoUrl);
+    if (videoId == null || _youtubeController == null) return;
+
+    _youtubeController!.pause();
+    final startAt = _youtubeController!.value.position.inSeconds;
+
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (_) => _LandscapeVideoPage(
+          videoId: videoId,
+          startAtSeconds: startAt,
+        ),
+      ),
+    );
   }
 
   int _resolveInitialModuleIndex(int moduleCount) {
@@ -854,6 +931,16 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
       if (fromDb.isNotEmpty) {
         _modules = fromDb;
         _mi = _resolveInitialModuleIndex(_modules.length);
+        if (!_dbModulesApplied) {
+          _dbModulesApplied = true;
+          if ((widget.initialModuleIndex ?? 0) > 0 && _mi > 0) {
+            _needsInitialScroll = true;
+          }
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_mi > 0) _scrollTabToIndex(_mi);
+            _scrollToSelectedMaterialIfNeeded();
+          });
+        }
       }
     }
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
@@ -862,6 +949,8 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
 
   @override
   void dispose() {
+    _youtubeController?.dispose();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: SystemUiOverlay.values);
     _scroll.dispose();
@@ -880,6 +969,27 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
     if (i <= 0 || i >= _modules.length) return;
     setState(() => _mi = i);
     _scrollTabToIndex(i);
+    _scrollToSelectedMaterial();
+  }
+
+  void _scrollToSelectedMaterialIfNeeded() {
+    if (!_needsInitialScroll || _mi <= 0) return;
+    _scrollToSelectedMaterial(onComplete: () => _needsInitialScroll = false);
+  }
+
+  void _scrollToSelectedMaterial({VoidCallback? onComplete}) {
+    if (_mi <= 0) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _mi <= 0) return;
+      final ctx = _selectedMaterialKey.currentContext;
+      if (ctx == null) return;
+      Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeOutCubic,
+        alignment: 0.05,
+      ).then((_) => onComplete?.call());
+    });
   }
 
   void _scrollTabToIndex(int i) {
@@ -896,8 +1006,33 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
     });
   }
 
+  YoutubePlayer _buildYoutubePlayer() {
+    return YoutubePlayer(
+      controller: _youtubeController!,
+      showVideoProgressIndicator: true,
+      progressIndicatorColor: AppTheme.green,
+      onReady: () {},
+      bottomActions: [
+        const CurrentPosition(),
+        const ProgressBar(isExpanded: true),
+        const RemainingDuration(),
+        IconButton(
+          icon: const Icon(Icons.fullscreen, color: Colors.white),
+          onPressed: _openLandscapeVideo,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    return _buildPage(
+      introVideoPlayer:
+          _youtubeController != null ? _buildYoutubePlayer() : null,
+    );
+  }
+
+  Widget _buildPage({Widget? introVideoPlayer}) {
     final t = context.watch<AppTheme>();
     return Scaffold(
       backgroundColor: t.bg,
@@ -906,7 +1041,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
       resizeToAvoidBottomInset: false,
       body: Column(children: [
         _topNav(t),
-        Expanded(child: _content(t)),
+        Expanded(child: _content(t, introVideoPlayer: introVideoPlayer)),
       ]),
     );
   }
@@ -1060,7 +1195,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
   }
 
   // ── Main scrollable content ──
-  Widget _content(AppTheme t) {
+  Widget _content(AppTheme t, {Widget? introVideoPlayer}) {
     final aiModule = _mi > 0 ? _mod : _primaryModule;
     final aiSub = aiModule.subMateri.first;
 
@@ -1076,6 +1211,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
           emoji: widget.course.emoji,
           accentColor: AppTheme.green,
           introVideoUrl: widget.course.introVideoUrl,
+          introVideoPlayer: introVideoPlayer,
         ),
         const SizedBox(height: 16),
         _mainReading(t),
@@ -1092,9 +1228,12 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
         ],
         if (_mi > 0) ...[
           const SizedBox(height: 16),
-          AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _subContent(t, key: ValueKey(_mi))),
+          KeyedSubtree(
+            key: _selectedMaterialKey,
+            child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: _subContent(t, key: ValueKey(_mi))),
+          ),
         ],
         const SizedBox(height: 20),
         AiTutorChat(

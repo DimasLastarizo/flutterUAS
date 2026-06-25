@@ -420,6 +420,7 @@ class _MateriPageState extends State<MateriPage> with TickerProviderStateMixin {
             ModuleDetailPage(course: c, initialModuleIndex: moduleIndex),
       ),
     ).then((_) {
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
       SystemChrome.setEnabledSystemUIMode(
         SystemUiMode.manual,
         overlays: SystemUiOverlay.values,
@@ -436,6 +437,7 @@ class _MateriPageState extends State<MateriPage> with TickerProviderStateMixin {
         builder: (_) => ModuleDetailPage(course: c),
       ),
     ).then((_) {
+      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
       SystemChrome.setEnabledSystemUIMode(
         SystemUiMode.manual,
         overlays: SystemUiOverlay.values,
