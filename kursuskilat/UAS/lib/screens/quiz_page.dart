@@ -716,28 +716,27 @@ class _LevelQuizPageState extends State<LevelQuizPage> {
     } catch (e) {
       if (mounted) {
         debugPrint('submit_level_result: $e');
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                'Skor tidak tersimpan ke server. Coba login ulang atau hubungi tim.',
+                style: TextStyle(color: t.textPri, fontWeight: FontWeight.w700),
+              ),
+              backgroundColor: t.surface,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: BorderSide(color: AppTheme.red.withValues(alpha: 0.4)),
+              ),
+              margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            ),
+          );
+        Navigator.of(context).pop();
+        return;
       }
     }
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            'Level selesai! $_correctCount/${widget.level.questions} benar (offline)',
-            style: TextStyle(color: t.textPri, fontWeight: FontWeight.w700),
-          ),
-          backgroundColor: t.surface,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: BorderSide(color: AppTheme.green.withValues(alpha: 0.4)),
-          ),
-          margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        ),
-      );
-    Navigator.of(context).pop();
   }
 }
 
